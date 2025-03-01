@@ -1,18 +1,21 @@
 const express=require("express");
 
+const {handleMiddleware}=require("../middlewares/auth");
+
 const app=express();
 
-app.use(
-    "/user",
-    (req,res,next)=>{
-  console.log("In firsr response handler");
-  res.send("response 1");
-  next();
-},(req,res)=>{
-    console.log("In response 2");
-    res.send("response 2");
+app.use("/admin",handleMiddleware);
 
+app.get("/admin/getData",(req,res)=>{
+    res.send("authentication is successfull");
 });
+
+app.get("/admin/delete",(req,res)=>{
+    res.send("deleted user successfully");
+})
+
+
+
 
 
 
