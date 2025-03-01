@@ -1,29 +1,34 @@
 const express=require("express");
 const {connectDb}=require("./config/database");
+const bcrypt=require("bcrypt");
 const User=require("./models/user");
+const { validateSignUpData}=require("./utils/validation");
+const saltRound=10;
 const app=express();
 const port=3000;
 
 app.use(express.json());  //middleware to read json data in server
 
 app.post("/signup",async (req,res)=>{
-    console.log(req.body);
-    // res.send("signup done");
+   //validation of data
+   try{
+   validateSignUpData(req);
+   const {firstName,lastName,emailId,password}=req.body;
 
-    // creating a new instance of the User model
-    const user=new User(req.body);
+   //encrypt the password
+   const passwordHash= await bcrypt.hash(password,saltRound);
+   console.log("hashed password is" +passwordHash);
 
-     try{
-        await user.save();
+ // creating a new instance of the User model
+    const user=new User({
+        firstName, lastName, emailId, password: passwordHash
+    });
+      await user.save();
         res.send("user added successfully");
      }
      catch(err){
-         res.status(404).send("error has occured");
+         res.status(404).send("error has occured" + err.message);
      }
- 
-    
-
-
 });
  
 // Get user by email
@@ -94,6 +99,28 @@ app.patch("/user/:userId",async(req,res)=>{
 
     }
 });
+
+app.post("/login",async (req,res)=>{
+    try{
+       const {emailId,password}=req.body;
+       const user=await User.findOne({emailId:emailId});
+       if(!user){
+        throw new Error("invalid credentials");
+       }
+        console.log(`${password} ${user.password}`);
+        const isPasswordValid=await bcrypt.compare(password,user.password);
+
+        if(isPasswordValid){
+            res.status(200).send("login successfull");
+        }
+        else{
+            throw new Error("invalid credentials");
+        }  
+}
+    catch(err){
+        res.status(404).send("something went wrong" +err.message);
+    }
+})
 
 
 
