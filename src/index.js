@@ -1,31 +1,37 @@
 const express=require("express");
-
-const {handleMiddleware}=require("../middlewares/auth");
-
+const {connectDb}=require("./config/database");
+const User=require("./models/user");
 const app=express();
+const port=3000;
 
-app.use("/admin",handleMiddleware);
+app.post("/signup",async (req,res)=>{
+    // creating a new instance of the User model
+    const user=new User({
+        firstName: "aman",
+        lastName: "thapa",
+        emailId: "aman@gmail.com",
+        password: "aman07"
+    });
 
-app.get("/admin/getData",(req,res)=>{
-    try{
-        res.send("authentication is successfull");
-    }
-    catch(err){
-          res.send("uff something went wrong");
-    }
+     await user.save();
+     res.send("user added successfully");
+ 
     
+
+
 });
 
-app.use("/",(err,req,res,next)=>{   //order matters
-       if(err){
-        //log your errors
-        res.status(500).send("something went wrong");
-       }
+connectDb()
+ .then(()=>{
+    console.log("database connected successfully");
+    app.listen(port,()=>{
+        console.log(`server started at port ${port}`);
+    })
+})
+ .catch((err)=>{
+  console.log("database cannot be conneceted");
 })
 
-app.get("/admin/delete",(req,res)=>{
-    res.send("deleted user successfully");
-})
 
 
 
@@ -36,6 +42,7 @@ app.get("/admin/delete",(req,res)=>{
 
 
 
-app.listen(3000,()=>{
-    console.log("server successfully listening on port : 3000");
-});
+
+
+
+
