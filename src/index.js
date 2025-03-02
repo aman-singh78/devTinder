@@ -2,13 +2,18 @@ const express=require("express");
 const {connectDb}=require("./config/database");
 const bcrypt=require("bcrypt");
 const User=require("./models/user");
+const cookieParser=require("cookie-parser");
 const { validateSignUpData}=require("./utils/validation");
+const jwt=require("jsonwebtoken");
+const {userAuth}=require("../middlewares/auth");
 const saltRound=10;
 const app=express();
-const port=3000;
+const port=7000;
 
 app.use(express.json());  //middleware to read json data in server
+app.use(cookieParser());
 
+// Adding users in db
 app.post("/signup",async (req,res)=>{
    //validation of data
    try{
@@ -21,7 +26,10 @@ app.post("/signup",async (req,res)=>{
 
  // creating a new instance of the User model
     const user=new User({
-        firstName, lastName, emailId, password: passwordHash
+        firstName, 
+        lastName,
+        emailId,
+         password: passwordHash
     });
       await user.save();
         res.send("user added successfully");
@@ -100,6 +108,7 @@ app.patch("/user/:userId",async(req,res)=>{
     }
 });
 
+// Login authentication
 app.post("/login",async (req,res)=>{
     try{
        const {emailId,password}=req.body;
@@ -107,10 +116,16 @@ app.post("/login",async (req,res)=>{
        if(!user){
         throw new Error("invalid credentials");
        }
-        console.log(`${password} ${user.password}`);
-        const isPasswordValid=await bcrypt.compare(password,user.password);
+        const isPasswordValid=await user.validatePassword(password);
 
         if(isPasswordValid){
+
+            //Create a JWT token
+           const token=await user.getJWT();
+
+            //Add token to cookie and send back response to the user
+
+            res.cookie("token",token);
             res.status(200).send("login successfull");
         }
         else{
@@ -120,6 +135,25 @@ app.post("/login",async (req,res)=>{
     catch(err){
         res.status(404).send("something went wrong" +err.message);
     }
+})
+
+// Get cookies and token
+app.get("/profile",userAuth,async (req,res)=>{
+    try{
+    const user=req.user;
+    if(!user){
+        throw new Error("please login again");
+    }
+    res.send(user);
+    }
+    catch(err){
+        res.status(404).send("something went wrong " +err.message);
+    }
+})
+
+app.post("/sendConnectReq", userAuth, async(req,res)=>{
+
+    res.send("connection req sent");
 })
 
 
