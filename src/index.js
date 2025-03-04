@@ -13,10 +13,12 @@ const port=7000;
 const authrouter=require("./routes/auth");
 const profilerouter=require("./routes/profile");
 const requestrouter=require("./routes/request");
+const userRouter = require("./routes/user");
 
 app.use("/",authrouter);
 app.use("/",profilerouter);
 app.use("/",requestrouter);
+app.use("/",userRouter);
 
 app.use(express.json());  //middleware to read json data in server
 app.use(cookieParser());
